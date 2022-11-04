@@ -25,7 +25,7 @@ def change_resolution(new_resolution, image_path):
     )
 
 
-def download_reddit_image(reddit_instance: praw.Reddit, image_path, subreddit, flair, limit, time_filter):
+def find_random_reddit_image(reddit_instance: praw.Reddit, subreddit, flair, limit, time_filter):
     """downloads a random image from reddit"""
     jpg_or_png = re.compile(r"\.(?:jpg|png)$")
     submission_list = []
@@ -41,8 +41,7 @@ def download_reddit_image(reddit_instance: praw.Reddit, image_path, subreddit, f
         if jpg_or_png.findall(submission.url):
             submission_list.append(submission)
     submission = random.choice(submission_list)
-    url = submission.url
-    download_image(url, image_path)
+    return submission.url
 
 
 def main():
@@ -52,7 +51,6 @@ def main():
     user32 = ctypes.windll.user32
     user32.SetProcessDPIAware()
     resolution = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
-    ctypes.windll.user32.SystemParametersInfoW(20, 0, absolute_path, 0)  # changes the window's backdrop
     my_reddit = praw.Reddit(
         client_id=config.get('reddit_client_id'),
         client_secret=config.get('reddit_client_secret'),
@@ -60,15 +58,16 @@ def main():
         username=config.get('reddit_username'),
         password=config.get('reddit_password')
     )
-    download_reddit_image(
+    url = find_random_reddit_image(
         reddit_instance=my_reddit,
-        image_path=image_file_path,
         subreddit=config['subreddit'],
         flair=config['flair'],
         limit=int(config['limit']),
         time_filter=config['time_filter']
     )
+    download_image(url, image_file_path)
     change_resolution(resolution, image_file_path)
+    ctypes.windll.user32.SystemParametersInfoW(20, 0, absolute_path, 0)  # changes the wallpaper
 
 
 if __name__ == '__main__':
